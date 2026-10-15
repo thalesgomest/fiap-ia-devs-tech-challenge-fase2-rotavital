@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RotaVital</title>
+  <meta name="description" content="RotaVital — logística hospitalar inteligente: roteirização com algoritmo genético e assistente com LLM.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Pular para o conteúdo</a>
+
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="RotaVital — início">
+      <img src="/static/logo.svg" alt="" width="38" height="38">
+      <span class="brand-text">
+        <span class="brand-name">RotaVital</span>
+        <span class="brand-tag">Logística hospitalar inteligente</span>
+      </span>
+    </a>
+    <div class="topbar-right">
+      <div class="status-wrap">
+        <button id="llm-chip" class="status-chip" type="button" aria-describedby="llm-tip">
+          <span id="llm-chip-text">Verificando assistente…</span>
+        </button>
+        <div id="llm-tip" class="tip" role="tooltip"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="stepper" id="nav" aria-label="Etapas do fluxo">
+      <ol>
+        <li><button class="step" type="button" data-view="cenario"><span class="step-n">1</span><span class="step-txt"><span class="step-label">Cenário</span><span class="step-sub" id="nav-sub-cenario">Escolha a operação</span></span></button></li>
+        <li><button class="step" type="button" data-view="frota"><span class="step-n">2</span><span class="step-txt"><span class="step-label">Frota &amp; Regras</span><span class="step-sub" id="nav-sub-frota">Veículos e parâmetros</span></span></button></li>
+        <li><button class="step" type="button" data-view="otimizacao"><span class="step-n">3</span><span class="step-txt"><span class="step-label">Otimização</span><span class="step-sub" id="nav-sub-otimizacao">Evolução ao vivo</span></span></button></li>
+        <li><button class="step" type="button" data-view="resultados"><span class="step-n">4</span><span class="step-txt"><span class="step-label">Resultados</span><span class="step-sub" id="nav-sub-resultados">Rotas e indicadores</span></span></button></li>
+        <li><button class="step" type="button" data-view="assistente"><span class="step-n">5</span><span class="step-txt"><span class="step-label">Assistente</span><span class="step-sub" id="nav-sub-assistente">Pergunte sobre as rotas</span></span></button></li>
+        <li><button class="step" type="button" data-view="relatorios"><span class="step-n">6</span><span class="step-txt"><span class="step-label">Relatórios</span><span class="step-sub" id="nav-sub-relatorios">Textos gerados por IA</span></span></button></li>
+        <li><button class="step" type="button" data-view="historico"><span class="step-n">7</span><span class="step-txt"><span class="step-label">Histórico</span><span class="step-sub" id="nav-sub-historico">Execuções anteriores</span></span></button></li>
+      </ol>
+      <div class="nav-foot">
+        <p class="nav-foot-title">Contexto atual</p>
+        <dl class="ctx">
+          <dt>Cenário</dt><dd id="ctx-cenario">—</dd>
+          <dt>Execução</dt><dd id="ctx-run">—</dd>
+        </dl>
+      </div>
+    </nav>
+
+    <main id="main" tabindex="-1">
+      <!-- 1. Cenário -->
+      <section class="view" id="view-cenario" data-view="cenario" aria-labelledby="h-cenario">
+        <div class="view-head">
+          <div>
+            <p class="eyebrow">Passo 1 de 7</p>
+            <h1 id="h-cenario" tabindex="-1">Cenário de operação</h1>
+            <p class="lead">Escolha uma operação pronta ou importe as suas paradas em CSV.</p>
+          </div>
+        </div>
+
+        <div id="scenario-list" class="scenario-grid" aria-label="Cenários disponíveis"></div>
+
+        <details class="card import-card" id="import-panel">
+          <summary><span class="summary-title">Importar CSV de paradas</span><span class="muted small">Crie um cenário novo reaproveitando depósito, frota e regras de outro</span></summary>
+          <form id="import-form" class="import-form" novalidate>
+            <div class="form-grid">
+              <div class="field">
+                <label for="import-file">Arquivo CSV</label>
+                <input id="import-file" name="arquivo" type="file" accept=".csv,text/csv" required>
+              </div>
+              <div class="field">
+                <label for="import-name">Nome do cenário</label>
+                <input id="import-name" name="nome" type="text" maxlength="80" placeholder="Ex.: Plantão de sábado" required>
+              </div>
+              <div class="field">
+                <label for="import-base">Frota e regras de</label>
+                <select id="import-base" name="base_id" required></select>
+              </div>
+            </div>
+            <div class="csv-help">
+              <p class="small muted">Colunas esperadas (cabeçalho na primeira linha, separador vírgula):</p>
+              <code class="csv-cols">id,nome,tipo,lat,lon,demanda_kg,prioridade,refrigerado,janela_inicio,janela_fim,tempo_servico_min,carga</code>
+              <p class="small muted">prioridade: <code>critica</code>, <code>alta</code> ou <code>rotina</code> · refrigerado: <code>true</code>/<code>false</code> · janelas no formato <code>HH:MM</code>.</p>
+            </div>
+            <div id="import-error" class="alert alert-error" role="alert" hidden></div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-ghost" id="btn-csv-template">Baixar modelo CSV</button>
+              <button type="submit" class="btn btn-primary" id="btn-import">Importar cenário</button>
+            </div>
+          </form>
+        </details>
+
+        <div id="scenario-detail" hidden>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2 id="scenario-title"></h2>
+                <p id="scenario-desc" class="muted"></p>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-go-frota">Configurar frota <span aria-hidden="true">→</span></button>
+            </div>
+            <div id="scenario-chips" class="chips"></div>
+            <div id="map-cenario" class="map" role="region" aria-label="Mapa do depósito e das paradas"></div>
+            <ul class="map-legend" aria-label="Legenda do mapa">
+              <li><span class="lg-dot" style="--c:var(--crit)"></span>Crítica</li>
+              <li><span class="lg-dot" style="--c:var(--alta)"></span>Alta</li>
+              <li><span class="lg-dot" style="--c:var(--rotina)"></span>Rotina</li>
+              <li><span class="lg-ring"></span>Refrigerada</li>
+              <li><span class="lg-depot"></span>Depósito</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Paradas</h2>
+              <div class="filters">
+                <label class="sr-only" for="stop-search">Buscar parada</label>
+                <input id="stop-search" type="search" placeholder="Buscar nome, tipo ou carga…">
+                <label class="sr-only" for="stop-filter-prio">Filtrar por prioridade</label>
+                <select id="stop-filter-prio">
+                  <option value="">Todas as prioridades</option>
+                  <option value="critica">Crítica</option>
+                  <option value="alta">Alta</option>
+                  <option value="rotina">Rotina</option>
+                </select>
+                <label class="sr-only" for="stop-filter-ref">Filtrar por refrigeração</label>
+                <select id="stop-filter-ref">
+                  <option value="">Refrigeradas e secas</option>
+                  <option value="true">Só refrigeradas</option>
+                  <option value="false">Só carga seca</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="table" id="stops-table">
+                <thead>
+                  <tr>
+                    <th scope="col"><button type="button" class="th-sort" data-sort="id">ID</button></th>
+                    <th scope="col"><button type="button" class="th-sort" data-sort="nome">Nome</button></th>
+                    <th scope="col"><button type="button" class="th-sort" data-sort="tipo">Tipo</button></th>
+                    <th scope="col"><button type="button" class="th-sort" data-sort="carga">Carga</button></th>
+                    <th scope="col" class="num"><button type="button" class="th-sort" data-sort="demanda_kg">Demanda</button></th>
+                    <th scope="col"><button type="button" class="th-sort" data-sort="prioridade">Prioridade</button></th>
+                    <th scope="col"><button type="button" class="th-sort" data-sort="janela">Janela</button></th>
+                    <th scope="col" class="num"><button type="button" class="th-sort" data-sort="tempo_servico_min">Serviço</button></th>
+                    <th scope="col"><button type="button" class="th-sort" data-sort="refrigerado">Refrig.</button></th>
+                  </tr>
+                </thead>
+                <tbody id="stops-tbody"></tbody>
+              </table>
+            </div>
+            <p id="stops-count" class="small muted table-foot"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Frota & Regras -->
+      <section class="view" id="view-frota" data-view="frota" aria-labelledby="h-frota" hidden>
+        <div class="view-head">
+          <div>
+            <p class="eyebrow">Passo 2 de 7</p>
+            <h1 id="h-frota" tabindex="-1">Frota &amp; regras</h1>
+            <p class="lead">Ajuste os veículos disponíveis e escolha como o algoritmo genético vai buscar a melhor rota.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>Frota disponível</h2>
+              <p class="muted small">Edite os valores para simular outra frota. Campos alterados ficam destacados.</p>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-reset-fleet">Restaurar valores</button>
+          </div>
+          <div class="table-wrap">
+            <table class="table table-edit">
+              <thead>
+                <tr>
+                  <th scope="col">Veículo</th>
+                  <th scope="col" class="num">Quantidade</th>
+                  <th scope="col" class="num">Capacidade (kg)</th>
+                  <th scope="col" class="num">Autonomia (km)</th>
+                  <th scope="col" class="num">Custo fixo (R$)</th>
+                  <th scope="col" class="num">Custo/km (R$)</th>
+                  <th scope="col" class="num">Jornada máx. (min)</th>
+                </tr>
+              </thead>
+              <tbody id="fleet-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h2>Regras de prioridade</h2></div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr><th scope="col">Prioridade</th><th scope="col" class="num">SLA</th><th scope="col" class="num">Multa por minuto</th></tr>
+                </thead>
+                <tbody id="rules-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Parâmetros da operação</h2></div>
+            <dl id="rules-extra" class="dl-grid"></dl>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>Algoritmo genético</h2>
+              <p class="muted small">Escolha um perfil. Use “Avançado” para ajustar parâmetros individuais.</p>
+            </div>
+          </div>
+          <div id="preset-list" class="preset-grid" role="radiogroup" aria-label="Perfil de otimização"></div>
+          <details class="advanced" id="advanced">
+            <summary>Avançado <span class="muted small" id="advanced-count"></span></summary>
+            <div id="advanced-grid" class="form-grid form-grid-4"></div>
+          </details>
+        </div>
+
+        <div class="action-bar">
+          <p id="run-summary" class="muted"></p>
+          <button type="button" class="btn btn-primary btn-lg" id="btn-run">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M3 12h4l3-7 4 14 3-7h4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Otimizar rotas
+          </button>
+        </div>
+      </section>
+
+      <!-- 3. Otimização ao vivo -->
+      <section class="view" id="view-otimizacao" data-view="otimizacao" aria-labelledby="h-otimizacao" hidden>
+        <div class="view-head">
+          <div>
+            <p class="eyebrow">Passo 3 de 7</p>
+            <h1 id="h-otimizacao" tabindex="-1">Otimização ao vivo</h1>
+            <p class="lead" id="live-lead">Acompanhe a evolução da população a cada geração.</p>
+          </div>
+          <div class="head-actions">
+            <span id="run-status" class="status-pill"></span>
+            <button type="button" class="btn btn-danger" id="btn-stop">Parar</button>
+          </div>
+        </div>
+
+        <div class="card progress-card">
+          <div class="progress-meta">
+            <span id="progress-text">Preparando…</span>
+            <span id="progress-pct" class="tnum"></span>
+          </div>
+          <div class="progress" id="progress" role="progressbar" aria-label="Progresso da otimização" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
+
+        <div id="run-error" class="alert alert-error" role="alert" hidden></div>
+
+        <div class="kpi-grid kpi-grid-4">
+          <div class="kpi"><span class="kpi-label">Melhor custo</span><span class="kpi-value" id="kpi-melhor">—</span><span class="kpi-sub" id="kpi-melhor-sub"></span></div>
+          <div class="kpi"><span class="kpi-label">Média da população</span><span class="kpi-value" id="kpi-media">—</span><span class="kpi-sub">custo médio dos indivíduos</span></div>
+          <div class="kpi"><span class="kpi-label">Diversidade</span><span class="kpi-value" id="kpi-div">—</span><span class="kpi-sub" id="kpi-div-sub"></span></div>
+          <div class="kpi"><span class="kpi-label">Tempo decorrido</span><span class="kpi-value" id="kpi-tempo">—</span><span class="kpi-sub" id="kpi-tempo-sub"></span></div>
+        </div>
+
+        <div class="grid-2 grid-live">
+          <div class="card">
+            <div class="card-head"><div><h2>Convergência</h2><p class="muted small">Linhas tracejadas: custo das abordagens de referência.</p></div></div>
+            <div class="chart-box"><canvas id="chart-live" aria-label="Gráfico do melhor custo e custo médio por geração" role="img"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h2>Melhor solução atual</h2><p class="muted small">Atualiza conforme o algoritmo encontra rotas melhores.</p></div></div>
+            <div id="map-live" class="map map-sm" role="region" aria-label="Mapa da melhor solução atual"></div>
+            <ul id="live-legend" class="vehicle-legend"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Resultados -->
+      <section class="view" id="view-resultados" data-view="resultados" aria-labelledby="h-resultados" hidden>
+        <div class="view-head">
+          <div>
+            <p class="eyebrow">Passo 4 de 7</p>
+            <h1 id="h-resultados" tabindex="-1">Resultados</h1>
+            <p class="lead" id="res-subtitle"></p>
+          </div>
+          <div class="head-actions">
+            <button type="button" class="btn btn-ghost" id="btn-download">Baixar JSON</button>
+            <button type="button" class="btn btn-primary" id="btn-go-chat">Perguntar ao assistente</button>
+          </div>
+        </div>
+
+        <div id="res-hero" class="kpi-grid hero-grid"></div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h2>Composição do custo</h2></div>
+            <div id="res-breakdown"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h2>GA vs outras abordagens</h2><p class="muted small">Custo total de cada estratégia no mesmo cenário.</p></div></div>
+            <div class="chart-box" id="chart-compare-box"><canvas id="chart-compare" role="img" aria-label="Comparação de custo total entre o algoritmo genético e as abordagens de referência"></canvas></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Mapa das rotas</h2>
+            <div class="btn-row">
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-routes-all">Mostrar todas</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-routes-none">Ocultar todas</button>
+            </div>
+          </div>
+          <div class="map-layout">
+            <div id="map-result" class="map map-lg" role="region" aria-label="Mapa com todas as rotas"></div>
+            <fieldset class="route-legend">
+              <legend>Veículos</legend>
+              <div id="route-legend"></div>
+            </fieldset>
+          </div>
+        </div>
+
+        <h2 class="section-title">Rotas por veículo</h2>
+        <div id="route-cards" class="route-grid"></div>
+
+        <div class="card">
+          <div class="card-head"><h2>Algoritmo genético</h2></div>
+          <div class="ga-layout">
+            <dl id="ga-info" class="dl-grid dl-stack"></dl>
+            <div class="chart-box"><canvas id="chart-convergence" role="img" aria-label="Convergência do algoritmo genético: melhor custo, média e diversidade por geração"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. Assistente -->
+      <section class="view" id="view-assistente" data-view="assistente" aria-labelledby="h-assistente" hidden>
+        <div class="view-head">
+          <div>
+            <p class="eyebrow">Passo 5 de 7</p>
+            <h1 id="h-assistente" tabindex="-1">Assistente</h1>
+            <p class="lead" id="chat-context">Converse sobre as rotas desta execução.</p>
+          </div>
+          <div class="head-actions">
+            <button type="button" class="btn btn-ghost" id="btn-chat-clear">Nova conversa</button>
+          </div>
+        </div>
+        <div class="card chat-card">
+          <div id="chat-log" class="chat-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversa com o assistente"></div>
+          <div id="chat-suggestions" class="suggestions" aria-label="Perguntas sugeridas"></div>
+          <form id="chat-form" class="chat-form">
+            <label for="chat-input" class="sr-only">Mensagem para o assistente</label>
+            <textarea id="chat-input" rows="1" maxlength="4000" placeholder="Pergunte sobre entregas, veículos, atrasos, custos…"></textarea>
+            <button type="submit" class="btn btn-primary" id="chat-send" aria-label="Enviar mensagem">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" fill="currentColor"/></svg>
+            </button>
+          </form>
+          <p class="small muted chat-hint">Enter envia · Shift+Enter quebra linha</p>
+        </div>
+      </section>
+
+      <!-- 6. Relatórios -->
+      <section class="view" id="view-relatorios" data-view="relatorios" aria-labelledby="h-relatorios" hidden>
+        <div class="view-head">
+          <div>
+            <p class="eyebrow">Passo 6 de 7</p>
+            <h1 id="h-relatorios" tabindex="-1">Relatórios</h1>
+            <p class="lead">Relatórios gerados por IA, com avaliação automática de qualidade.</p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>Relatório da execução</h2>
+                <p class="muted small" id="report-run-hint">Resumo gerencial da execução atual.</p>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-report-run">Gerar relatório</button>
+            </div>
+            <div id="report-run-out" class="report-out"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>Relatório do período</h2>
+                <p class="muted small">Consolida todas as execuções do período.</p>
+              </div>
+              <div class="btn-row">
+                <div class="seg" id="period-toggle" role="group" aria-label="Período">
+                  <button type="button" data-dias="1" aria-pressed="true">Diário</button>
+                  <button type="button" data-dias="7" aria-pressed="false">Semanal</button>
+                </div>
+                <button type="button" class="btn btn-primary" id="btn-report-period">Gerar</button>
+              </div>
+            </div>
+            <div id="report-period-kpis" class="kpi-grid kpi-grid-auto"></div>
+            <div id="report-period-out" class="report-out"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>Textos gerados e avaliação</h2>
+              <p class="muted small">Tudo o que a IA produziu para esta execução, com a nota de qualidade.</p>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-refresh-textos">Atualizar</button>
+          </div>
+          <div id="textos-wrap"></div>
+        </div>
+      </section>
+
+      <!-- 7. Histórico -->
+      <section class="view" id="view-historico" data-view="historico" aria-labelledby="h-historico" hidden>
+        <div class="view-head">
+          <div>
+            <p class="eyebrow">Passo 7 de 7</p>
+            <h1 id="h-historico" tabindex="-1">Histórico</h1>
+            <p class="lead">As 30 execuções mais recentes. Clique em uma linha para abrir os resultados.</p>
+          </div>
+          <div class="head-actions">
+            <button type="button" class="btn btn-ghost" id="btn-refresh-history">Atualizar</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th scope="col">Data</th>
+                  <th scope="col">Cenário</th>
+                  <th scope="col" class="num">Custo total</th>
+                  <th scope="col" class="num">No prazo</th>
+                  <th scope="col" class="num">Veículos</th>
+                  <th scope="col" class="num">Distância</th>
+                  <th scope="col" class="num">Gerações</th>
+                  <th scope="col">Parada</th>
+                  <th scope="col" class="num">Tempo</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody"></tbody>
+            </table>
+          </div>
+          <p id="history-empty" class="empty" hidden>Nenhuma execução registrada ainda.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="md-modal" aria-labelledby="md-modal-title">
+    <div class="modal-inner">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow" id="md-modal-eyebrow">Instruções do motorista</p>
+          <h2 id="md-modal-title"></h2>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="md-modal-print">Imprimir</button>
+          <button type="button" class="icon-btn" id="md-modal-close" aria-label="Fechar">✕</button>
+        </div>
+      </div>
+      <div id="md-modal-meta" class="modal-meta"></div>
+      <article id="md-modal-body" class="md"></article>
+    </div>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>

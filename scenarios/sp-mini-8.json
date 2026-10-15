@@ -1,0 +1,188 @@
+{
+  "id": "sp-mini-8",
+  "nome": "Demonstração rápida - 8 pontos",
+  "descricao": "Cenário mínimo para testes e demonstração ao vivo.",
+  "inicio_turno": "07:00",
+  "fator_sinuosidade": 1.35,
+  "multa_veiculo_excedente": 2500,
+  "deposito": {
+    "nome": "Hemocentro Central (CD)",
+    "lat": -23.5571,
+    "lon": -46.669
+  },
+  "prioridades": {
+    "critica": {
+      "rotulo": "Crítica",
+      "sla_min": 120,
+      "multa_min": 40.0,
+      "ordem": 0
+    },
+    "alta": {
+      "rotulo": "Alta",
+      "sla_min": 240,
+      "multa_min": 10.0,
+      "ordem": 1
+    },
+    "rotina": {
+      "rotulo": "Rotina",
+      "sla_min": null,
+      "multa_min": 1.5,
+      "ordem": 2
+    }
+  },
+  "frota": [
+    {
+      "codigo": "VAN-REF",
+      "nome": "Van refrigerada",
+      "quantidade": 2,
+      "capacidade_kg": 350,
+      "autonomia_km": 220,
+      "velocidade_kmh": 26,
+      "refrigerado": true,
+      "custo_fixo": 180,
+      "custo_km": 1.9,
+      "jornada_max_min": 600,
+      "co2_kg_km": 0.26
+    },
+    {
+      "codigo": "UTIL",
+      "nome": "Utilitário de carga seca",
+      "quantidade": 2,
+      "capacidade_kg": 700,
+      "autonomia_km": 300,
+      "velocidade_kmh": 24,
+      "refrigerado": false,
+      "custo_fixo": 140,
+      "custo_km": 1.5,
+      "jornada_max_min": 600,
+      "co2_kg_km": 0.24
+    },
+    {
+      "codigo": "MOTO",
+      "nome": "Moto com baú térmico",
+      "quantidade": 3,
+      "capacidade_kg": 30,
+      "autonomia_km": 140,
+      "velocidade_kmh": 34,
+      "refrigerado": true,
+      "custo_fixo": 70,
+      "custo_km": 0.45,
+      "jornada_max_min": 480,
+      "co2_kg_km": 0.06
+    }
+  ],
+  "paradas": [
+    {
+      "id": "P01",
+      "nome": "Paciente domiciliar Lapa",
+      "tipo": "domiciliar",
+      "lat": -23.52031,
+      "lon": -46.70419,
+      "demanda_kg": 8.8,
+      "prioridade": "alta",
+      "refrigerado": false,
+      "janela_inicio": "12:00",
+      "janela_fim": "14:00",
+      "tempo_servico_min": 15,
+      "carga": "Medicamentos home care"
+    },
+    {
+      "id": "P02",
+      "nome": "Paciente domiciliar Liberdade",
+      "tipo": "domiciliar",
+      "lat": -23.55792,
+      "lon": -46.63106,
+      "demanda_kg": 7.7,
+      "prioridade": "alta",
+      "refrigerado": false,
+      "janela_inicio": "09:30",
+      "janela_fim": "11:30",
+      "tempo_servico_min": 15,
+      "carga": "Medicamentos home care"
+    },
+    {
+      "id": "P03",
+      "nome": "AMA/UPA Jardim Ângela",
+      "tipo": "ama",
+      "lat": -23.69863,
+      "lon": -46.77349,
+      "demanda_kg": 100.7,
+      "prioridade": "alta",
+      "refrigerado": false,
+      "janela_inicio": "07:30",
+      "janela_fim": "17:30",
+      "tempo_servico_min": 15,
+      "carga": "Insumos hospitalares"
+    },
+    {
+      "id": "P04",
+      "nome": "Hospital Saúde",
+      "tipo": "hospital",
+      "lat": -23.62166,
+      "lon": -46.63676,
+      "demanda_kg": 19.2,
+      "prioridade": "critica",
+      "refrigerado": true,
+      "janela_inicio": "07:00",
+      "janela_fim": "18:00",
+      "tempo_servico_min": 12,
+      "carga": "Hemocomponentes"
+    },
+    {
+      "id": "P05",
+      "nome": "UBS São Mateus",
+      "tipo": "ubs",
+      "lat": -23.60722,
+      "lon": -46.47525,
+      "demanda_kg": 32.0,
+      "prioridade": "rotina",
+      "refrigerado": true,
+      "janela_inicio": "08:00",
+      "janela_fim": "17:00",
+      "tempo_servico_min": 10,
+      "carga": "Vacinas"
+    },
+    {
+      "id": "P06",
+      "nome": "UBS Brás",
+      "tipo": "ubs",
+      "lat": -23.54484,
+      "lon": -46.61359,
+      "demanda_kg": 21.1,
+      "prioridade": "alta",
+      "refrigerado": true,
+      "janela_inicio": "08:00",
+      "janela_fim": "17:00",
+      "tempo_servico_min": 10,
+      "carga": "Vacinas"
+    },
+    {
+      "id": "P07",
+      "nome": "Paciente domiciliar Cidade Ademar",
+      "tipo": "domiciliar",
+      "lat": -23.66908,
+      "lon": -46.65971,
+      "demanda_kg": 7.5,
+      "prioridade": "rotina",
+      "refrigerado": false,
+      "janela_inicio": "15:00",
+      "janela_fim": "17:00",
+      "tempo_servico_min": 15,
+      "carga": "Medicamentos home care"
+    },
+    {
+      "id": "P08",
+      "nome": "Hospital Tatuapé",
+      "tipo": "hospital",
+      "lat": -23.53628,
+      "lon": -46.57651,
+      "demanda_kg": 16.0,
+      "prioridade": "critica",
+      "refrigerado": true,
+      "janela_inicio": "07:00",
+      "janela_fim": "18:00",
+      "tempo_servico_min": 12,
+      "carga": "Hemocomponentes"
+    }
+  ]
+}
