@@ -171,11 +171,11 @@ def test_ollama_tool_loop(monkeypatch, run):
     ])
     sent = []
 
-    def fake_post(url, json=None, timeout=None):
+    def fake_post(self, url, json=None, timeout=None):
         sent.append(json)
         return _Resp(next(replies))
 
-    monkeypatch.setattr("rotavital.llm.providers.ollama.requests.post", fake_post)
+    monkeypatch.setattr("rotavital.llm.providers.ollama.requests.Session.post", fake_post)
     tools = [ToolSpec("resumo_execucao", "", {"type": "object", "properties": {}}, RunTools(run).resumo_execucao)]
     result = OllamaProvider("http://x", "llama3.1:8b").chat("sys", [{"role": "user", "content": "custo?"}], tools)
     assert result.text == "Custo calculado."
@@ -200,3 +200,108 @@ def test_openai_compatible_tool_loop(monkeypatch, run):
     result = OpenAICompatibleProvider("http://x", "k", "m").chat("sys", [{"role": "user", "content": "?"}], tools)
     assert result.text == "Duas rotas."
     assert sent[1]["messages"][-1] == {"role": "tool", "tool_call_id": "c1", "content": result.tool_calls[0].result}
+
+def test_qwen_options_disable_thinking_and_preserve_reproducible_settings(monkeypatch):
+    from rotavital.config import settings
+
+    monkeypatch.setattr(settings, "ollama_think", False)
+    monkeypatch.setattr(settings, "ollama_seed", 2026)
+    monkeypatch.setattr(settings, "ollama_num_predict", 512)
+    monkeypatch.setattr(settings, "ollama_context", 8192)
+    monkeypatch.setattr(settings, "llm_temperature", 0)
+    sent = []
+
+    def fake_post(self, url, json=None, timeout=None):
+        sent.append(json)
+        return _Resp({"message": {"content": "Resposta local baseada nas ferramentas."}})
+
+    monkeypatch.setattr("requests.Session.post", fake_post)
+    provider = OllamaProvider("http://127.0.0.1:11434", "qwen3:4b")
+    assert provider.session.trust_env is False
+    assert provider.chat("sistema", [{"role": "user", "content": "Olá"}], []).text
+    assert sent[0]["think"] is False and sent[0]["keep_alive"] == "10m"
+    assert sent[0]["options"] == {"temperature": 0, "num_ctx": 8192, "seed": 2026, "num_predict": 512}
+    assert provider.complete("sistema", "pergunta", max_tokens=120)
+    assert sent[-1]["options"]["num_predict"] == 120
+
+
+@pytest.mark.parametrize("payload", [{}, [], {"message": None}, {"message": {"content": ""}}])
+def test_ollama_rejects_missing_or_empty_messages(monkeypatch, payload):
+    monkeypatch.setattr("requests.Session.post", lambda *args, **kwargs: _Resp(payload))
+    with pytest.raises(LLMError):
+        OllamaProvider().chat("sistema", [{"role": "user", "content": "pergunta"}], [])
+
+
+def test_ollama_reports_backend_errors_and_unsupported_tools(monkeypatch):
+    from rotavital.llm.providers.base import ToolsUnsupported
+
+    monkeypatch.setattr("requests.Session.post", lambda *args, **kwargs: _Resp({"error": "modelo indisponível"}, 500))
+    with pytest.raises(LLMError, match="HTTP 500"):
+        OllamaProvider().complete("sistema", "pergunta")
+    response = _Resp({}, 400)
+    response.text = "model does not support tools"
+    monkeypatch.setattr("requests.Session.post", lambda *args, **kwargs: response)
+    with pytest.raises(ToolsUnsupported):
+        OllamaProvider().chat("sistema", [], [])
+
+
+def test_ollama_health_records_model_digest_without_proxy(monkeypatch):
+    response = _Resp({"models": [{"name": "qwen3:4b", "digest": "digest-testado"}]})
+    response.raise_for_status = lambda: None
+    monkeypatch.setattr("requests.Session.get", lambda *args, **kwargs: response)
+    provider = OllamaProvider("http://127.0.0.1:11434", "qwen3:4b")
+    assert provider.health() == (True, "ok")
+    assert provider.model_digest == "digest-testado"
+
+
+@pytest.mark.parametrize("fallback", [True, False])
+@pytest.mark.parametrize("unsupported_tools", [True, False])
+def test_chat_honors_offline_fallback_also_when_context_call_fails(run, monkeypatch, fallback, unsupported_tools):
+    from rotavital.config import settings
+    from rotavital.llm.providers.base import ToolsUnsupported
+
+    class BrokenProvider(FakeProvider):
+        def chat(self, *args, **kwargs):
+            if unsupported_tools:
+                raise ToolsUnsupported("sem ferramentas")
+            raise LLMError("falha local")
+
+    monkeypatch.setattr(settings, "llm_fallback_offline", fallback)
+    provider = BrokenProvider(fail=True)
+    messages = [{"papel": "usuario", "conteudo": "Quais rotas?"}]
+    if fallback:
+        result = assistant.answer(run, messages, provider)
+        assert result["provedor"] == "offline" and result["erro_llm"]
+    else:
+        with pytest.raises(LLMError):
+            assistant.answer(run, messages, provider)
+
+
+
+def test_risk_priority_is_filtered_by_python_before_the_llm_sees_the_result(run):
+    import copy
+
+    data = copy.deepcopy(run)
+    stops = [stop for route in data["solucao"]["rotas"] for stop in route["paradas"]]
+    for stop in stops:
+        stop["atraso_min"], stop["folga_min"] = 0, 60
+    stops[0]["prioridade"], stops[0]["folga_min"] = "alta", 5
+    impl = RunTools(data)
+    assert impl.entregas_em_risco()[0]["prioridade"] == "alta"
+    result = impl.entregas_em_risco(prioridade="critica")
+    assert result[0]["quantidade"] == 0 and result[0]["prioridade_filtrada"] == "critica"
+    text, calls = assistant.offline_answer(data, "Quais entregas críticas estão em risco?")
+    assert "Nenhuma entrega de prioridade crítica" in text
+    assert json.loads(calls[0].result)[0]["quantidade"] == 0
+
+
+def test_model_cannot_change_an_explicit_risk_priority_scope(run):
+    from rotavital.llm.tools import build_tools, requested_priority
+
+    assert requested_priority("Quais entregas críticas estão em risco?") == "critica"
+    assert requested_priority("Compare entregas críticas e de prioridade alta") is None
+    tools = {tool.name: tool for tool in build_tools(run, risk_priority="critica")}
+    _, rejected = run_tool(tools, "entregas_em_risco", {"prioridade": "alta"})
+    assert "erro" in json.loads(rejected)
+    _, accepted = run_tool(tools, "entregas_em_risco", {})
+    assert all(item.get("prioridade") == "critica" or item.get("quantidade") == 0 for item in json.loads(accepted))

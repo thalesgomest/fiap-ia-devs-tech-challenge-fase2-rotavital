@@ -1,0 +1,602 @@
+{
+  "id": "20261017-142244-81e2b9",
+  "criado_em": "2026-10-17T14:22:44",
+  "cenario": {
+    "id": "sp-mini-8",
+    "nome": "Demonstração rápida - 8 pontos",
+    "descricao": "Cenário mínimo para testes e demonstração ao vivo.",
+    "inicio_turno": "07:00",
+    "deposito": {
+      "nome": "Hemocentro Central (CD)",
+      "lat": -23.5571,
+      "lon": -46.669
+    },
+    "frota": [
+      {
+        "codigo": "VAN-REF",
+        "nome": "Van refrigerada",
+        "quantidade": 2,
+        "capacidade_kg": 350.0,
+        "autonomia_km": 220.0,
+        "refrigerado": true,
+        "custo_fixo": 180.0,
+        "custo_km": 1.9,
+        "jornada_max_min": 600
+      },
+      {
+        "codigo": "UTIL",
+        "nome": "Utilitário de carga seca",
+        "quantidade": 2,
+        "capacidade_kg": 700.0,
+        "autonomia_km": 300.0,
+        "refrigerado": false,
+        "custo_fixo": 140.0,
+        "custo_km": 1.5,
+        "jornada_max_min": 600
+      },
+      {
+        "codigo": "MOTO",
+        "nome": "Moto com baú térmico",
+        "quantidade": 3,
+        "capacidade_kg": 30.0,
+        "autonomia_km": 140.0,
+        "refrigerado": true,
+        "custo_fixo": 70.0,
+        "custo_km": 0.45,
+        "jornada_max_min": 480
+      }
+    ],
+    "prioridades": {
+      "critica": {
+        "rotulo": "Crítica",
+        "sla_min": 120,
+        "multa_min": 40.0
+      },
+      "alta": {
+        "rotulo": "Alta",
+        "sla_min": 240,
+        "multa_min": 10.0
+      },
+      "rotina": {
+        "rotulo": "Rotina",
+        "sla_min": null,
+        "multa_min": 1.5
+      }
+    },
+    "paradas": [
+      {
+        "id": "P01",
+        "nome": "Paciente domiciliar Lapa",
+        "tipo": "domiciliar",
+        "lat": -23.52031,
+        "lon": -46.70419,
+        "prioridade": "alta",
+        "refrigerado": false,
+        "demanda_kg": 8.8
+      },
+      {
+        "id": "P02",
+        "nome": "Paciente domiciliar Liberdade",
+        "tipo": "domiciliar",
+        "lat": -23.55792,
+        "lon": -46.63106,
+        "prioridade": "alta",
+        "refrigerado": false,
+        "demanda_kg": 7.7
+      },
+      {
+        "id": "P03",
+        "nome": "AMA/UPA Jardim Ângela",
+        "tipo": "ama",
+        "lat": -23.69863,
+        "lon": -46.77349,
+        "prioridade": "alta",
+        "refrigerado": false,
+        "demanda_kg": 100.7
+      },
+      {
+        "id": "P04",
+        "nome": "Hospital Saúde",
+        "tipo": "hospital",
+        "lat": -23.62166,
+        "lon": -46.63676,
+        "prioridade": "critica",
+        "refrigerado": true,
+        "demanda_kg": 19.2
+      },
+      {
+        "id": "P05",
+        "nome": "UBS São Mateus",
+        "tipo": "ubs",
+        "lat": -23.60722,
+        "lon": -46.47525,
+        "prioridade": "rotina",
+        "refrigerado": true,
+        "demanda_kg": 32.0
+      },
+      {
+        "id": "P06",
+        "nome": "UBS Brás",
+        "tipo": "ubs",
+        "lat": -23.54484,
+        "lon": -46.61359,
+        "prioridade": "alta",
+        "refrigerado": true,
+        "demanda_kg": 21.1
+      },
+      {
+        "id": "P07",
+        "nome": "Paciente domiciliar Cidade Ademar",
+        "tipo": "domiciliar",
+        "lat": -23.66908,
+        "lon": -46.65971,
+        "prioridade": "rotina",
+        "refrigerado": false,
+        "demanda_kg": 7.5
+      },
+      {
+        "id": "P08",
+        "nome": "Hospital Tatuapé",
+        "tipo": "hospital",
+        "lat": -23.53628,
+        "lon": -46.57651,
+        "prioridade": "critica",
+        "refrigerado": true,
+        "demanda_kg": 16.0
+      }
+    ]
+  },
+  "ga": {
+    "config": {
+      "population_size": 20,
+      "generations": 10,
+      "crossover": "ox",
+      "crossover_rate": 0.9,
+      "mutation_rate": 0.25,
+      "tournament_k": 3,
+      "elitism": 2,
+      "seed_ratio": 0.1,
+      "local_search_every": 10,
+      "stagnation_limit": 50,
+      "immigrant_ratio": 0.15,
+      "time_limit_s": 30,
+      "progress_every": 5,
+      "seed": 2026
+    },
+    "geracoes": 10,
+    "motivo_parada": "max_geracoes",
+    "tempo_s": 0.02,
+    "avaliacoes": 129,
+    "historico": [
+      {
+        "geracao": 1,
+        "melhor": 610.64,
+        "media": 788.73,
+        "diversidade": 1.0,
+        "mutacao": 0.25
+      },
+      {
+        "geracao": 2,
+        "melhor": 548.85,
+        "media": 686.51,
+        "diversidade": 0.85,
+        "mutacao": 0.25
+      },
+      {
+        "geracao": 3,
+        "melhor": 544.55,
+        "media": 672.53,
+        "diversidade": 0.85,
+        "mutacao": 0.25
+      },
+      {
+        "geracao": 4,
+        "melhor": 544.55,
+        "media": 679.6,
+        "diversidade": 0.95,
+        "mutacao": 0.25
+      },
+      {
+        "geracao": 5,
+        "melhor": 544.55,
+        "media": 627.94,
+        "diversidade": 0.75,
+        "mutacao": 0.25
+      },
+      {
+        "geracao": 6,
+        "melhor": 542.78,
+        "media": 621.27,
+        "diversidade": 0.65,
+        "mutacao": 0.25
+      },
+      {
+        "geracao": 7,
+        "melhor": 542.78,
+        "media": 576.58,
+        "diversidade": 0.5,
+        "mutacao": 0.25
+      },
+      {
+        "geracao": 8,
+        "melhor": 527.17,
+        "media": 559.6,
+        "diversidade": 0.3,
+        "mutacao": 0.25
+      },
+      {
+        "geracao": 9,
+        "melhor": 527.17,
+        "media": 579.57,
+        "diversidade": 0.4,
+        "mutacao": 0.25
+      },
+      {
+        "geracao": 10,
+        "melhor": 526.81,
+        "media": 583.19,
+        "diversidade": 0.6,
+        "mutacao": 0.25
+      }
+    ]
+  },
+  "solucao": {
+    "custo_total": 526.81,
+    "custo_operacional": 526.81,
+    "multa_atraso": 0.0,
+    "multa_frota": 0.0,
+    "distancia_km": 173.03,
+    "duracao_total_min": 861.9,
+    "co2_kg": 37.8,
+    "veiculos_usados": 2,
+    "veiculos_excedentes": 0,
+    "uso_por_tipo": {
+      "VAN-REF": 1,
+      "UTIL": 0,
+      "MOTO": 1
+    },
+    "entregas": 8,
+    "entregas_no_prazo": 8,
+    "taxa_no_prazo": 1.0,
+    "criticas_total": 2,
+    "criticas_no_prazo": 2,
+    "atraso_total_min": 0.0,
+    "ocupacao_media": 0.731,
+    "rotas": [
+      {
+        "veiculo": "MOTO #1",
+        "tipo": "MOTO",
+        "tipo_nome": "Moto com baú térmico",
+        "refrigerado": true,
+        "excedente": false,
+        "saida_deposito": "07:00",
+        "retorno_deposito": "12:28",
+        "distancia_km": 35.82,
+        "duracao_min": 328.0,
+        "carga_kg": 28.0,
+        "capacidade_kg": 30.0,
+        "ocupacao": 0.933,
+        "uso_autonomia": 0.256,
+        "custo_operacional": 86.12,
+        "multa_atraso": 0.0,
+        "paradas_atrasadas": 0,
+        "paradas": [
+          {
+            "ordem": 1,
+            "id": "P04",
+            "nome": "Hospital Saúde",
+            "tipo": "hospital",
+            "carga": "Hemocomponentes",
+            "prioridade": "critica",
+            "refrigerado": true,
+            "demanda_kg": 19.2,
+            "lat": -23.62166,
+            "lon": -46.63676,
+            "distancia_trecho_km": 10.66,
+            "chegada": "07:19",
+            "inicio_atendimento": "07:19",
+            "saida": "07:31",
+            "espera_min": 0.0,
+            "atraso_min": 0.0,
+            "prazo": "09:00",
+            "janela": "07:00-18:00",
+            "folga_min": 101.2,
+            "carga_restante_kg": 8.8
+          },
+          {
+            "ordem": 2,
+            "id": "P01",
+            "nome": "Paciente domiciliar Lapa",
+            "tipo": "domiciliar",
+            "carga": "Medicamentos home care",
+            "prioridade": "alta",
+            "refrigerado": false,
+            "demanda_kg": 8.8,
+            "lat": -23.52031,
+            "lon": -46.70419,
+            "distancia_trecho_km": 17.82,
+            "chegada": "08:02",
+            "inicio_atendimento": "12:00",
+            "saida": "12:15",
+            "espera_min": 237.7,
+            "atraso_min": 0.0,
+            "prazo": "14:00",
+            "janela": "12:00-14:00",
+            "folga_min": 120.0,
+            "carga_restante_kg": 0.0
+          }
+        ]
+      },
+      {
+        "veiculo": "VAN-REF #1",
+        "tipo": "VAN-REF",
+        "tipo_nome": "Van refrigerada",
+        "refrigerado": true,
+        "excedente": false,
+        "saida_deposito": "07:00",
+        "retorno_deposito": "15:54",
+        "distancia_km": 137.21,
+        "duracao_min": 533.9,
+        "carga_kg": 185.0,
+        "capacidade_kg": 350.0,
+        "ocupacao": 0.529,
+        "uso_autonomia": 0.624,
+        "custo_operacional": 440.69,
+        "multa_atraso": 0.0,
+        "paradas_atrasadas": 0,
+        "paradas": [
+          {
+            "ordem": 1,
+            "id": "P06",
+            "nome": "UBS Brás",
+            "tipo": "ubs",
+            "carga": "Vacinas",
+            "prioridade": "alta",
+            "refrigerado": true,
+            "demanda_kg": 21.1,
+            "lat": -23.54484,
+            "lon": -46.61359,
+            "distancia_trecho_km": 7.84,
+            "chegada": "07:18",
+            "inicio_atendimento": "08:00",
+            "saida": "08:10",
+            "espera_min": 41.9,
+            "atraso_min": 0.0,
+            "prazo": "11:00",
+            "janela": "08:00-17:00",
+            "folga_min": 180.0,
+            "carga_restante_kg": 163.9
+          },
+          {
+            "ordem": 2,
+            "id": "P08",
+            "nome": "Hospital Tatuapé",
+            "tipo": "hospital",
+            "carga": "Hemocomponentes",
+            "prioridade": "critica",
+            "refrigerado": true,
+            "demanda_kg": 16.0,
+            "lat": -23.53628,
+            "lon": -46.57651,
+            "distancia_trecho_km": 5.26,
+            "chegada": "08:22",
+            "inicio_atendimento": "08:22",
+            "saida": "08:34",
+            "espera_min": 0.0,
+            "atraso_min": 0.0,
+            "prazo": "09:00",
+            "janela": "07:00-18:00",
+            "folga_min": 37.9,
+            "carga_restante_kg": 147.9
+          },
+          {
+            "ordem": 3,
+            "id": "P02",
+            "nome": "Paciente domiciliar Liberdade",
+            "tipo": "domiciliar",
+            "carga": "Medicamentos home care",
+            "prioridade": "alta",
+            "refrigerado": false,
+            "demanda_kg": 7.7,
+            "lat": -23.55792,
+            "lon": -46.63106,
+            "distancia_trecho_km": 8.18,
+            "chegada": "08:53",
+            "inicio_atendimento": "09:30",
+            "saida": "09:45",
+            "espera_min": 37.0,
+            "atraso_min": 0.0,
+            "prazo": "11:00",
+            "janela": "09:30-11:30",
+            "folga_min": 90.0,
+            "carga_restante_kg": 140.2
+          },
+          {
+            "ordem": 4,
+            "id": "P03",
+            "nome": "AMA/UPA Jardim Ângela",
+            "tipo": "ama",
+            "carga": "Insumos hospitalares",
+            "prioridade": "alta",
+            "refrigerado": false,
+            "demanda_kg": 100.7,
+            "lat": -23.69863,
+            "lon": -46.77349,
+            "distancia_trecho_km": 28.81,
+            "chegada": "10:51",
+            "inicio_atendimento": "10:51",
+            "saida": "11:06",
+            "espera_min": 0.0,
+            "atraso_min": 0.0,
+            "prazo": "11:00",
+            "janela": "07:30-17:30",
+            "folga_min": 8.5,
+            "carga_restante_kg": 39.5
+          },
+          {
+            "ordem": 5,
+            "id": "P05",
+            "nome": "UBS São Mateus",
+            "tipo": "ubs",
+            "carga": "Vacinas",
+            "prioridade": "rotina",
+            "refrigerado": true,
+            "demanda_kg": 32.0,
+            "lat": -23.60722,
+            "lon": -46.47525,
+            "distancia_trecho_km": 43.24,
+            "chegada": "12:46",
+            "inicio_atendimento": "12:46",
+            "saida": "12:56",
+            "espera_min": 0.0,
+            "atraso_min": 0.0,
+            "prazo": "17:00",
+            "janela": "08:00-17:00",
+            "folga_min": 253.7,
+            "carga_restante_kg": 7.5
+          },
+          {
+            "ordem": 6,
+            "id": "P07",
+            "nome": "Paciente domiciliar Cidade Ademar",
+            "tipo": "domiciliar",
+            "carga": "Medicamentos home care",
+            "prioridade": "rotina",
+            "refrigerado": false,
+            "demanda_kg": 7.5,
+            "lat": -23.66908,
+            "lon": -46.65971,
+            "distancia_trecho_km": 27.01,
+            "chegada": "13:59",
+            "inicio_atendimento": "15:00",
+            "saida": "15:15",
+            "espera_min": 61.4,
+            "atraso_min": 0.0,
+            "prazo": "17:00",
+            "janela": "15:00-17:00",
+            "folga_min": 120.0,
+            "carga_restante_kg": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  "baselines": [
+    {
+      "id": "aleatorio",
+      "nome": "Aleatório (melhor de 30)",
+      "tempo_s": 0.004,
+      "custo_total": 679.01,
+      "distancia_km": 152.57,
+      "veiculos_usados": 3,
+      "taxa_no_prazo": 1.0,
+      "multa_atraso": 0.0,
+      "atraso_total_min": 0.0,
+      "rotas": [
+        [
+          "P08",
+          "P05",
+          "P02"
+        ],
+        [
+          "P04",
+          "P03",
+          "P07"
+        ],
+        [
+          "P06",
+          "P01"
+        ]
+      ]
+    },
+    {
+      "id": "regra_prioridade",
+      "nome": "Regra manual por prioridade",
+      "tempo_s": 0.0,
+      "custo_total": 804.94,
+      "distancia_km": 212.98,
+      "veiculos_usados": 5,
+      "taxa_no_prazo": 1.0,
+      "multa_atraso": 0.0,
+      "atraso_total_min": 0.0,
+      "rotas": [
+        [
+          "P04"
+        ],
+        [
+          "P08",
+          "P02"
+        ],
+        [
+          "P06"
+        ],
+        [
+          "P03",
+          "P01",
+          "P07"
+        ],
+        [
+          "P05"
+        ]
+      ]
+    },
+    {
+      "id": "vizinho_mais_proximo",
+      "nome": "Vizinho mais próximo + Split",
+      "tempo_s": 0.0,
+      "custo_total": 758.13,
+      "distancia_km": 185.04,
+      "veiculos_usados": 3,
+      "taxa_no_prazo": 1.0,
+      "multa_atraso": 0.0,
+      "atraso_total_min": 0.0,
+      "rotas": [
+        [
+          "P02",
+          "P06"
+        ],
+        [
+          "P08",
+          "P04",
+          "P07"
+        ],
+        [
+          "P03",
+          "P01",
+          "P05"
+        ]
+      ]
+    },
+    {
+      "id": "clarke_wright",
+      "nome": "Clarke-Wright (economias)",
+      "tempo_s": 0.0,
+      "custo_total": 622.82,
+      "distancia_km": 138.32,
+      "veiculos_usados": 2,
+      "taxa_no_prazo": 1.0,
+      "multa_atraso": 0.0,
+      "atraso_total_min": 0.0,
+      "rotas": [
+        [
+          "P05",
+          "P08",
+          "P06",
+          "P02",
+          "P01"
+        ],
+        [
+          "P04",
+          "P03",
+          "P07"
+        ]
+      ]
+    }
+  ],
+  "comparativo": {
+    "melhor_baseline": "Clarke-Wright (economias)",
+    "custo_baseline": 622.82,
+    "economia_rs": 96.01,
+    "economia_pct": 15.4
+  }
+}

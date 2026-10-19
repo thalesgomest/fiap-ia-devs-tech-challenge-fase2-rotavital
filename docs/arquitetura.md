@@ -114,7 +114,7 @@ ferramentas (modo offline).
 | Python puro no núcleo (sem numpy) | numpy/numba | O Split é sequencial (DP incremental); listas Python + cache de fitness bastam (~25 s para 40 paradas) |
 | Thread por execução + polling | Celery/Redis, WebSocket | Infra mínima para um projeto acadêmico; o contrato de progresso é incremental (`desde=k`) |
 | SQLite | PostgreSQL | Zero configuração; suficiente para histórico e relatórios por período |
-| Ollama como LLM padrão | API paga em nuvem | Gratuito, offline, sem chave exposta no repositório; modelos LLaMA citados no enunciado |
+| Ollama como LLM padrão | API paga em nuvem | Qwen3 4B Q4_K_M local, sem chave; configuração e pesos verificados |
 | Prompts em arquivos `.md` | strings no código | Versionamento, revisão e citação no relatório técnico |
 | Modo offline determinístico | falhar sem LLM | A aplicação e os testes nunca dependem de serviço externo |
 

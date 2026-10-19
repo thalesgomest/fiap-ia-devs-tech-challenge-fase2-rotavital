@@ -22,7 +22,7 @@ STAMP := venv/.instalado
 PORTA ?= 8000
 CENARIO ?= sp-hemorrede-40
 SEMENTES ?= 3
-OLLAMA_MODEL ?= llama3.1:8b
+OLLAMA_MODEL ?= qwen3:4b
 
 # Repassa um interpretador específico, se informado: make setup PYTHON=caminho/do/python
 ifdef PYTHON
@@ -89,7 +89,11 @@ cenarios: $(STAMP)
 	$(VPY) scripts/gerar_cenario.py
 
 llm:
+ifeq ($(OS),Windows_NT)
+	powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/setup-ollama.ps1 -Model "$(OLLAMA_MODEL)"
+else
 	ollama pull $(OLLAMA_MODEL)
+endif
 
 docker:
 	docker compose up --build

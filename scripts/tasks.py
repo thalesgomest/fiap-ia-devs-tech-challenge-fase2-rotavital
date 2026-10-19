@@ -26,8 +26,8 @@ IS_WINDOWS = os.name == "nt"
 VENV_PYTHON = VENV / ("Scripts/python.exe" if IS_WINDOWS else "bin/python")
 STAMP = VENV / ".instalado"
 MIN_VERSION = (3, 11)
-OLLAMA_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
+OLLAMA_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen3:4b")
 
 
 def _ok(msg):

@@ -52,6 +52,7 @@ def _resolve() -> Tuple[LLMProvider, dict]:
     status = {
         "provedor": configured.name,
         "modelo": configured.model,
+        "model_digest": getattr(configured, "model_digest", None),
         "disponivel": ok and not configured.offline,
         "modo": "offline" if provider.offline else "llm",
         "detalhe": detail,

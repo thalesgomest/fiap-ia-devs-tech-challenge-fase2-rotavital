@@ -125,6 +125,16 @@ Detalhamento das configurações e análise: [docs/experimentos.md](docs/experim
 
 ---
 
+## Qwen3 local e projeto principal
+
+Este é o projeto principal. A integração usa o **Qwen3 4B Q4_K_M** já validado no protótipo anterior, com runtime e ambiente próprios. Nesta máquina Windows:
+
+```powershell
+.\scripts\start-local.ps1
+```
+
+Abra `http://127.0.0.1:8000`, conclua uma otimização e entre na etapa **Assistente**. Instruções de preparação, parâmetros, origem dos pesos e avaliação em [docs/qwen3-local.md](docs/qwen3-local.md).
+
 ## 🚀 Como Executar
 
 Todo o projeto é operado pelo `make`, igual em Windows, macOS e Linux. Se preferir não
@@ -174,26 +184,27 @@ Outras variáveis: `PORTA=8080` muda a porta; `PYTHON=caminho/do/python` força 
 
 ---
 
-## 🤖 LLM (opcional)
+## 🤖 LLM local
 
-O app funciona **sem nenhuma LLM** (modo offline: textos determinísticos a partir dos
-dados). Para o assistente com IA local, instale o [Ollama](https://ollama.com) e baixe o
-modelo:
+O padrão desta integração é **Qwen3 4B Q4_K_M pelo Ollama**, com temperatura 0,
+semente 2026, contexto 8192 e `think=false`. Não houve fine-tuning. Os pesos
+reaproveitados têm aproximadamente 2,5 GB; nesta execução o Ollama utilizou CPU.
 
-```bash
-make llm                              # baixa o llama3.1:8b
-make llm OLLAMA_MODEL=llama3.2:3b     # máquinas mais modestas
+```powershell
+.\scripts\start-local.ps1
 ```
 
-| Máquina                                               | Modelo indicado                   |
-| ----------------------------------------------------- | --------------------------------- |
-| 16 GB de RAM, ou GPU com 6 GB+ de VRAM                | `llama3.1:8b` (padrão)            |
-| 8 GB de RAM com ~4 GB livres, ou GPU com 4 GB de VRAM | `llama3.2:3b`                     |
-| Menos que isso                                        | Modo offline ou provedor em nuvem |
+Na etapa **Assistente**, o topo deve mostrar `LLM: ollama · qwen3:4b` e `online`.
+A primeira resposta pode levar minutos em CPU. Para perguntas sobre prioridade,
+a ferramenta aplica o filtro em Python, distinguindo alta de crítica.
 
-O modelo usado é definido por `OLLAMA_MODEL` no `.env`. Para forçar o modo offline, use
-`LLM_PROVIDER=offline`. Detalhes, tempos esperados e provedores em nuvem (OpenAI,
-Claude) estão em [docs/llm.md](docs/llm.md#requisitos-de-hardware-para-o-ollama-local).
+O modelo é definido por `OLLAMA_MODEL` no `.env`. O modo determinístico é
+`LLM_PROVIDER=offline`; ele não equivale a uma chamada real à LLM. No chat,
+`LLM_FALLBACK_OFFLINE=0` expõe falhas, e `1` permite contingência identificada.
+Outros provedores continuam disponíveis na configuração existente.
+
+Preparação, parâmetros e origem: [Qwen3 local](docs/qwen3-local.md).
+Testes, chamadas reais e limitações: [Validação da integração](docs/validacao-qwen3.md).
 
 ---
 

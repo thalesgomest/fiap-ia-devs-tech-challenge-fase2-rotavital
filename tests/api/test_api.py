@@ -86,3 +86,18 @@ def test_csv_import(tmp_path, monkeypatch):
     created = resp.json()["id"]
     assert client.get(f"/api/cenarios/{created}").json()["paradas"][0]["nome"] == "UBS Nova"
     (settings.scenarios_dir / f"{created}.json").unlink()
+
+def test_chat_exposes_llm_failure_instead_of_disguised_offline_success(finished_run, monkeypatch):
+    from rotavital.config import settings
+    from rotavital.llm.providers.base import LLMError
+
+    def fail(*args, **kwargs):
+        raise LLMError("falha controlada do modelo local")
+
+    monkeypatch.setattr(settings, "llm_fallback_offline", False)
+    monkeypatch.setattr("rotavital.api.main.assistant.answer", fail)
+    response = client.post(f"/api/execucoes/{finished_run['id']}/chat", json={
+        "mensagens": [{"papel": "usuario", "conteudo": "Qual é a distância?"}],
+    })
+    assert response.status_code == 503
+    assert "falha controlada" in response.json()["detail"]

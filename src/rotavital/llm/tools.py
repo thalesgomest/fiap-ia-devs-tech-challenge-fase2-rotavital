@@ -7,6 +7,7 @@ alucinação, porque todo número da resposta vem de uma consulta real.
 
 from __future__ import annotations
 
+import re
 import unicodedata
 from typing import List, Optional
 
@@ -20,6 +21,15 @@ def _norm(text: str) -> str:
     decomposed = unicodedata.normalize("NFKD", text.lower())
     plain = "".join(c for c in decomposed if not unicodedata.combining(c))
     return " ".join(plain.replace("#", " ").split())
+
+
+def requested_priority(question: str) -> Optional[str]:
+    """Só fixa uma prioridade quando a pergunta menciona uma categoria única."""
+    normalized = _norm(question)
+    matches = [priority for priority, pattern in (
+        ("critica", r"\bcritic[ao]s?\b"), ("alta", r"\balt[ao]s?\b"), ("rotina", r"\brotina\b"),
+    ) if re.search(pattern, normalized)]
+    return matches[0] if len(matches) == 1 else None
 
 
 def find_route(run: dict, vehicle: str) -> dict:
@@ -97,10 +107,14 @@ class RunTools:
                     hits.append(dict(_stop_brief(stop), veiculo=route["veiculo"]))
         return hits or [{"erro": f"nenhuma parada encontrada para '{nome}'"}]
 
-    def entregas_em_risco(self, folga_minima_min: float = 15) -> List[dict]:
+    def entregas_em_risco(self, folga_minima_min: float = 15, prioridade: Optional[str] = None) -> List[dict]:
+        if prioridade not in (None, "critica", "alta", "rotina"):
+            raise ValueError("Prioridade deve ser critica, alta ou rotina.")
         risky = []
         for route in self.run["solucao"]["rotas"]:
             for stop in route["paradas"]:
+                if prioridade is not None and stop["prioridade"] != prioridade:
+                    continue
                 if stop["atraso_min"] > 0.5 or stop["folga_min"] < folga_minima_min:
                     risky.append(
                         dict(
@@ -110,7 +124,13 @@ class RunTools:
                         )
                     )
         risky.sort(key=lambda s: (s["situacao"] != "atrasada", s["folga_min"]))
-        return risky or [{"mensagem": "nenhuma entrega atrasada ou com folga baixa"}]
+        if risky:
+            return risky
+        label = {"critica": "crítica", "alta": "alta", "rotina": "rotina"}.get(prioridade)
+        category = f" de prioridade {label}" if label else ""
+        return [{"mensagem": f"Nenhuma entrega{category} está atrasada ou com folga inferior a {folga_minima_min:g} minutos.",
+                 "quantidade": 0, "prioridade_filtrada": prioridade,
+                 "observacao": "Zero é uma contagem calculada, não informação ausente."}]
 
     def comparar_abordagens(self) -> dict:
         sol = self.run["solucao"]
@@ -209,8 +229,22 @@ def aggregate_runs(runs: List[dict], days: int) -> dict:
     }
 
 
-def build_tools(run: dict, store: Optional[HistoryStore] = None) -> List[ToolSpec]:
+def build_tools(run: dict, store: Optional[HistoryStore] = None,
+                risk_priority: Optional[str] = None) -> List[ToolSpec]:
     impl = RunTools(run, store)
+
+    def scoped_risks(folga_minima_min: float = 15, prioridade: Optional[str] = risk_priority):
+        if risk_priority is not None and prioridade != risk_priority:
+            raise ValueError(f"A pergunta está restrita à prioridade {risk_priority}.")
+        return impl.entregas_em_risco(folga_minima_min, prioridade)
+
+    risk_description = "Entregas atrasadas ou com folga menor que o limite em relação ao prazo."
+    if risk_priority:
+        risk_description += f" Consulta restrita à prioridade {risk_priority} solicitada pelo usuário."
+    priority_parameter = {"type": "string", "enum": [risk_priority] if risk_priority else ["critica", "alta", "rotina"],
+                          "description": "Filtrar por prioridade; sem filtro consulta todas."}
+    if risk_priority:
+        priority_parameter["default"] = risk_priority
     vehicle_param = {
         "type": "string",
         "description": "Identificador do veículo exatamente como em listar_rotas, ex.: 'MOTO #1'",
@@ -246,14 +280,15 @@ def build_tools(run: dict, store: Optional[HistoryStore] = None) -> List[ToolSpe
         ),
         ToolSpec(
             "entregas_em_risco",
-            "Entregas atrasadas ou com folga menor que o limite em relação ao prazo.",
+            risk_description,
             {
                 "type": "object",
                 "properties": {
-                    "folga_minima_min": {"type": "number", "description": "Folga mínima aceitável em minutos (padrão 15)"}
+                    "folga_minima_min": {"type": "number", "description": "Folga mínima aceitável em minutos (padrão 15)"},
+                    "prioridade": priority_parameter
                 },
             },
-            impl.entregas_em_risco,
+            scoped_risks,
         ),
         ToolSpec(
             "comparar_abordagens",

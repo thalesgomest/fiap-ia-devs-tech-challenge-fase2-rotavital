@@ -2,14 +2,19 @@
 import { state, on } from '../state.js';
 import { $, esc, fmt, api, toastError, renderMarkdown } from '../util.js';
 
-const SUGESTOES = [
-  'Quais entregas críticas estão em risco?',
-  'Detalhe a rota da MOTO #1',
-  'Se a VAN-REF #1 atrasar 30 minutos, o que acontece?',
-  'Quanto economizamos em relação ao Clarke-Wright?',
-  'Onde está a entrega do Hospital Santana?',
-  'Como reduzir o custo da operação?',
-];
+function sugestoes() {
+  const rotas = state.run?.solucao?.rotas || [];
+  const veiculo = rotas[0]?.veiculo;
+  const parada = rotas.flatMap((r) => r.paradas || [])[0]?.nome;
+  return [
+    'Quais entregas críticas estão em risco?',
+    veiculo ? `Detalhe a rota da ${veiculo}` : 'Quais rotas foram planejadas?',
+    veiculo ? `Se a ${veiculo} atrasar 30 minutos, o que acontece?` : 'Qual é a duração da operação?',
+    'Quanto economizamos em relação ao Clarke-Wright?',
+    parada ? `Onde está a entrega de ${parada}?` : 'Qual é a distância total?',
+    'Como reduzir o custo da operação?',
+  ];
+}
 
 let waiting = false;
 
@@ -52,7 +57,7 @@ function render() {
         <h2>Como posso ajudar?</h2>
         <p>Pergunte sobre rotas, prazos, custos ou simule imprevistos. O assistente consulta os dados desta execução para responder.</p>
       </div>`;
-    $('#chat-suggestions').innerHTML = SUGESTOES
+    $('#chat-suggestions').innerHTML = sugestoes()
       .map((s) => `<button type="button" class="suggestion">${esc(s)}</button>`).join('');
   } else {
     log.innerHTML = msgs.map(messageHtml).join('');
@@ -60,7 +65,7 @@ function render() {
   }
   if (waiting) {
     log.insertAdjacentHTML('beforeend', `<div class="msg msg-assistant" id="chat-typing"><span class="msg-avatar" aria-hidden="true"><img src="/static/logo.svg" alt=""></span>
-      <div class="bubble"><span class="typing" aria-label="O assistente está escrevendo"><span></span><span></span><span></span></span></div></div>`);
+      <div class="bubble"><span class="typing" aria-label="O assistente está escrevendo"><span></span><span></span><span></span></span><p class="small muted">Consultando o assistente. A primeira resposta pode levar alguns minutos.</p></div></div>`);
   }
   log.scrollTop = log.scrollHeight;
   setWaiting(waiting);

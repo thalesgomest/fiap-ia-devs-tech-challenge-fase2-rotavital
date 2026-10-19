@@ -33,7 +33,7 @@ async function loadStatus() {
     tip.innerHTML = `Instruções, relatórios e o assistente usam <strong>${esc(llm.provedor)}</strong> (${esc(llm.modelo)}).${llm.detalhe ? `<br>${esc(llm.detalhe)}` : ''}`;
   } else {
     chip.innerHTML = '<span class="dot" aria-hidden="true"></span><span>Modo offline (sem LLM)</span>';
-    const modelo = esc(llm.modelo || 'llama3.1:8b');
+    const modelo = esc(llm.modelo || 'qwen3:4b');
     tip.innerHTML = `${llm.detalhe ? `${esc(llm.detalhe)}<br><br>` : ''}`
       + 'Sem LLM, os textos são montados por modelos determinísticos a partir dos dados da otimização. '
       + `Para ativar a IA: instale o Ollama (ollama.com), rode <code>ollama pull ${modelo}</code>, `

@@ -12,10 +12,11 @@ import json
 import re
 from typing import Dict, List, Optional
 
+from rotavital.config import settings
 from rotavital.llm import templates
 from rotavital.llm.prompts import load, render
-from rotavital.llm.providers.base import LLMError, LLMProvider, ToolCall, ToolsUnsupported
-from rotavital.llm.tools import RunTools, _norm, build_tools
+from rotavital.llm.providers.base import ChatResult, LLMError, LLMProvider, ToolCall, ToolsUnsupported
+from rotavital.llm.tools import RunTools, _norm, build_tools, requested_priority
 from rotavital.storage.history import HistoryStore
 
 MAX_HISTORY = 12
@@ -39,7 +40,7 @@ def answer(run: dict, messages: List[dict], provider: LLMProvider, store: Option
         text, calls = offline_answer(run, question, store)
         return {"resposta": text, "ferramentas": _trace_out(calls), "provedor": provider.name, "modelo": provider.model}
 
-    tools = build_tools(run, store)
+    tools = build_tools(run, store, risk_priority=requested_priority(question))
     system = load("sistema_base") + "\n\n" + render(
         "assistente_chat",
         cenario=run["cenario"]["nome"],
@@ -47,14 +48,19 @@ def answer(run: dict, messages: List[dict], provider: LLMProvider, store: Option
         veiculos=", ".join(r["veiculo"] for r in run["solucao"]["rotas"]),
     )
     try:
-        result = provider.chat(system, _to_wire(messages), tools)
+        try:
+            result = provider.chat(system, _to_wire(messages), tools)
+        except ToolsUnsupported:
+            result = ChatResult(_context_answer(run, messages, provider, store))
         text, calls = result.text, result.tool_calls
-    except ToolsUnsupported:
-        text, calls = _context_answer(run, messages, provider, store), []
+        if not text.strip():
+            raise LLMError("A LLM retornou uma resposta vazia.")
     except LLMError as exc:
+        if not settings.llm_fallback_offline:
+            raise
         text, calls = offline_answer(run, question, store)
         text += f"\n\n> Resposta em modo de contingência (LLM indisponível: {exc})."
-        return {"resposta": text, "ferramentas": _trace_out(calls), "provedor": "offline", "modelo": "modelos determinísticos"}
+        return {"resposta": text, "ferramentas": _trace_out(calls), "provedor": "offline", "modelo": "modelos determinísticos", "erro_llm": str(exc)}
     if store:
         store.save_llm_output(run["id"], "chat", f"P: {question}\nR: {text}", provider.name, provider.model)
     return {"resposta": text or "Não consegui gerar uma resposta.", "ferramentas": _trace_out(calls),
@@ -103,7 +109,7 @@ def _match_stop(run: dict, normalized_question: str) -> Optional[str]:
 
 def offline_answer(run: dict, question: str, store=None) -> tuple:
     """Roteador de intenções por palavras-chave sobre as mesmas ferramentas da LLM."""
-    tools = {t.name: t for t in build_tools(run, store)}
+    tools = {t.name: t for t in build_tools(run, store, risk_priority=requested_priority(question))}
     calls: List[ToolCall] = []
     q = _norm(question)
     vehicle_id = next(
@@ -140,7 +146,7 @@ def offline_answer(run: dict, question: str, store=None) -> tuple:
     if "risco" in q or "atras" in q or "prazo" in q:
         risky = _call(tools, "entregas_em_risco", calls)
         if risky and "mensagem" in risky[0]:
-            return "Nenhuma entrega está atrasada ou com folga inferior a 15 minutos.", calls
+            return risky[0]["mensagem"], calls
         lines = ["Entregas que exigem atenção:"]
         for s in risky:
             lines.append(f"- **{s['nome']}** ({s['veiculo']}, {s['prioridade']}): chegada {s['chegada']}, prazo {s['prazo']} - {s['situacao']}")

@@ -11,8 +11,8 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from rotavital import __version__
@@ -27,6 +27,7 @@ from rotavital.domain.scenarios import (
     stops_from_csv,
 )
 from rotavital.llm import assistant, get_provider, llm_status, reports
+from rotavital.llm.providers.base import LLMError
 from rotavital.optimization.ga import PRESETS
 from rotavital.services import JobManager, apply_fleet_override
 from rotavital.storage.history import HistoryStore
@@ -43,6 +44,11 @@ app = FastAPI(
 )
 store = HistoryStore()
 jobs = JobManager(store)
+
+
+@app.exception_handler(LLMError)
+async def llm_error_handler(request: Request, exc: LLMError):
+    return JSONResponse(status_code=503, content={"detail": f"Não foi possível consultar a LLM: {exc}"})
 
 
 def _run_or_404(run_id: str) -> dict:

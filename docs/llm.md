@@ -1,5 +1,7 @@
 # Integração com LLM
 
+> Integração local atual: **Qwen3 4B Q4_K_M via Ollama**, no projeto principal RotaVital. Para iniciar o runtime já preparado, usar o chat e conferir origem/avaliação, siga [Qwen3 local](qwen3-local.md). Os demais provedores continuam disponíveis.
+
 ## Requisitos atendidos
 
 | Requisito do enunciado | Implementação |
@@ -17,17 +19,18 @@ ou cotas de terceiros, nenhuma credencial pode ficar no repositório, e a aplica
 parar de funcionar quando a LLM estiver indisponível. Por isso, a camada:
 
 1. **Não tem credencial no código**: toda chave vem do `.env`.
-2. **Usa Ollama como padrão**: LLM local (Llama 3.1 8B, citado no enunciado como família
-   LLaMA), gratuita e offline.
+2. **Usa Ollama como padrão**: Qwen3 4B Q4_K_M local, com configuração e pesos rastreáveis.
 3. **Troca de provedor com uma variável**: `LLM_PROVIDER=ollama|openai|anthropic|offline`.
-4. **Nunca quebra**: sem LLM disponível, cai para textos determinísticos e sinaliza isso na interface.
+4. **Distingue falha e contingência**: no chat, a contingência depende de `LLM_FALLBACK_OFFLINE`; quando desativada, o erro chega à interface como HTTP 503.
 
-| Provedor | Quando usar | Custo | Qualidade em pt-BR / ferramentas |
-|---|---|---|---|
-| `ollama` (llama3.1:8b, qwen2.5:7b) | padrão, demonstração local | grátis (CPU/GPU local) | boa / boa no Qwen 2.5 e no Llama 3.1 |
-| `openai` (qualquer API compatível) | OpenAI, Groq, OpenRouter, LM Studio, Gemini | por token | muito boa |
-| `anthropic` (Claude via SDK oficial) | melhor qualidade de raciocínio e ferramentas | por token | excelente |
-| `offline` | testes, CI, sem internet | grátis | textos fixos |
+| Provedor | Integração |
+|---|---|
+| `ollama` | Qwen3 4B Q4_K_M local verificado nesta máquina |
+| `openai` | Adaptador existente para APIs compatíveis com OpenAI |
+| `anthropic` | Adaptador existente para SDK Anthropic |
+| `offline` | Textos determinísticos, sem inferência de LLM |
+
+Esta rodada verificou o Qwen3 local; não comparou a qualidade dos outros provedores.
 
 Para usar o Claude: `LLM_PROVIDER=anthropic` e a credencial em
 `ANTHROPIC_API_KEY` (ou `ant auth login`). O modelo padrão é `claude-opus-5-5`, com esforço
@@ -36,60 +39,39 @@ Para usar o Claude: `LLM_PROVIDER=anthropic` e a credencial em
 
 ## Requisitos de hardware para o Ollama local
 
-O modelo roda inteiro na máquina. Ele precisa caber na **memória de vídeo (VRAM)** da GPU
-ou, sem GPU compatível, na **memória RAM livre**, e na CPU fica bem mais lento. Os valores
-abaixo são para os modelos quantizados padrão do Ollama (Q4) com o contexto usado pelo
-RotaVital (`num_ctx` = 8192 tokens, que acrescenta cerca de 1 GB ao tamanho do arquivo).
+O modelo precisa caber na memória disponível. O arquivo usado é o GGUF oficial
+Qwen3 4B Q4_K_M, de **2.497.280.256 bytes** (aproximadamente 2,5 GB decimais).
+Com contexto 8192, a API do Ollama informou cerca de **3,89 GB** para modelo/contexto
+e `size_vram=0`: a inferência desta rodada utilizou CPU. Isso não mede o pico de
+memória de todo o processo nem estabelece o mínimo de RAM de qualquer máquina.
 
-| Modelo (`OLLAMA_MODEL`) | Download | Mínimo para rodar | Recomendado | Ferramentas | Uso |
-|---|---|---|---|---|---|
-| `llama3.2:1b` | 1,3 GB | 8 GB de RAM total, sem GPU | GPU com 4 GB | sim | só para testar o fluxo (qualidade baixa em pt-BR) |
-| `llama3.2:3b` | 2,0 GB | 8 GB de RAM total **com ~4 GB livres**, sem GPU | GPU com 4 GB de VRAM | sim | **máquinas modestas** |
-| `qwen2.5:3b` | 1,9 GB | igual ao anterior | GPU com 4 GB de VRAM | sim | alternativa ao 3B, bom em ferramentas |
-| `llama3.1:8b` (padrão) | 4,9 GB | 16 GB de RAM total **ou** GPU com 6 GB de VRAM | GPU com 8 GB de VRAM | sim | melhor qualidade local |
-| `qwen2.5:7b` | 4,7 GB | igual ao `llama3.1:8b` | GPU com 8 GB de VRAM | sim | alternativa ao 8B, ótimo em ferramentas |
-
-Também são necessários: cerca de 10 GB de disco livre, Windows 10+, macOS 12+ ou Linux, e
-para GPU uma NVIDIA com drivers atuais (ou Apple Silicon, que usa a memória unificada).
-O modelo precisa suportar **ferramentas (function calling)**: todos da tabela suportam.
-Modelos sem esse suporte funcionam no modo de contexto compacto, com respostas menos
-precisas.
-
-### Caso medido: abaixo do mínimo
-
-Máquina de desenvolvimento: Intel Core i5-4440 (4 núcleos), **8 GB de RAM (0,9 GB livre)** e
-GeForce GTX 960 com **2 GB de VRAM**.
-
-- `llama3.1:8b` **não rodou**: o Ollama colocou 0 de 33 camadas na GPU (2 GB não comportam o
-  modelo), tentou carregar os 4,7 GB na RAM, que estava quase toda ocupada, e desistiu depois
-  de 18 minutos sem gerar nenhuma resposta.
-- Nesse cenário o RotaVital cortou a chamada no prazo (`LLM_TIMEOUT_S`) e entregou a folha de
-  rota pelo modelo determinístico, sinalizando a contingência na interface.
-
-Para uma máquina assim, use `llama3.2:3b` e feche outros programas pesados (navegador com
-muitas abas, IDE) antes de carregar o modelo.
+Não houve avaliação comparativa de outros modelos ou GPUs nesta integração.
+Os pesos, a quantização e o contexto importam mais que o nome do modelo sozinho.
+A preparação portátil também exige espaço para os binários do Ollama.
 
 ### Como trocar de modelo
 
-```bash
-make llm OLLAMA_MODEL=llama3.2:3b     # ou: ollama pull llama3.2:3b
-```
+O modelo é configurável por `OLLAMA_MODEL` no `.env`; reinicie o aplicativo após
+alterar a configuração. No Windows, `scripts/setup-ollama.ps1 -Model nome:tag`
+prepara o modelo escolhido. A importação padrão do Qwen3 utiliza revisão e hash
+fixados; outro nome/registro pode fornecer bytes e desempenho diferentes.
 
-Depois, no `.env`, defina `OLLAMA_MODEL=llama3.2:3b` e reinicie o app. `make doctor` confirma
-se o modelo configurado está baixado.
+### Tempos observados e `LLM_TIMEOUT_S`
 
-### Tempos esperados e `LLM_TIMEOUT_S`
+Na avaliação inicial do chat, três perguntas levaram aproximadamente **150,1 s**,
+**65,7 s** e **15,6 s**. A primeira incluiu carregamento e consulta de ferramenta;
+os contextos e comprimentos de resposta eram diferentes. São observações locais,
+não um benchmark controlado de hardware ou uma promessa para toda pergunta.
 
-- A **primeira chamada** inclui carregar o modelo na memória: de segundos (GPU, SSD) a
-  minutos (CPU, HD). As seguintes são mais rápidas enquanto o modelo continua carregado
-  (o Ollama o mantém por 5 minutos sem uso).
-- Uma folha de rota tem cerca de 400 a 800 tokens. Na CPU, modelos 7-8B costumam gerar
-  poucos tokens por segundo, então cada texto pode levar minutos.
-- `LLM_TIMEOUT_S` (padrão 120 s) é o prazo **total** de cada chamada. Em máquina lenta,
-  aumente para 300 s; ao estourar, o app usa o texto de contingência em vez de travar.
+`LLM_TIMEOUT_S=300` limita cada chamada ao modelo. Uma pergunta pode exigir uma
+chamada para selecionar a ferramenta e outra para redigir a resposta. A configuração
+usa `think=false`, saída de chat de até 512 tokens e `keep_alive=10m`. A interface
+aguarda a resposta completa e informa que a primeira pode levar alguns minutos.
 
-Sem hardware adequado, a alternativa é um provedor em nuvem (`LLM_PROVIDER=openai` ou
-`anthropic`), que roda em qualquer máquina com internet.
+O chat apresenta erro quando a LLM falha e a contingência está desativada. O modo
+offline e textos de contingência são identificados, não contam como respostas do Qwen3.
+A [validação da integração](validacao-qwen3.md) preserva também um erro semântico
+observado e o reteste dirigido após a correção.
 
 ## Arquitetura da camada
 

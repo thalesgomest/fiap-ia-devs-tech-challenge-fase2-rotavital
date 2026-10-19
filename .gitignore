@@ -210,6 +210,8 @@ __marimo__/
 tmpclaude-*
 
 # RotaVital
+.runtime/
+artifacts/
 data/
 experiments/*/
 !experiments/README.md

@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-17",
+  "project": "RotaVital",
+  "baseline_commit": "fe79253",
+  "automated_tests": 60,
+  "scenario": "sp-mini-8",
+  "run_id": "20261017-142244-81e2b9",
+  "initial_real_evaluation": {
+    "run_id": "20261017-142244-81e2b9",
+    "model": {
+      "provedor": "ollama",
+      "modelo": "qwen3:4b",
+      "model_digest": "9a09256a51fe03679e2c348cfcb337dd7cbfe3cbeed790db4eba1b854f46d3b2",
+      "disponivel": true,
+      "modo": "llm",
+      "detalhe": "ok"
+    },
+    "cases": [
+      {
+        "case": "riscos",
+        "elapsed_seconds": 150.07299010000133,
+        "tools": [
+          "entregas_em_risco"
+        ],
+        "reference_tool_check": true,
+        "response": "A entrega crítica em risco é a parada 4, destinada à AMA/UPA Jardim Ângela, com carga de insumos hospitalares de alta prioridade. O veículo envolvido é o VAN-REF #1. A carga tem 100,7 kg e está prevista para chegar às 10:51, com início do atendimento também às 10:51 e saida às 11:06. A janela de entrega é de 07:30 a 17:30, e o prazo é de 11:00. A folga atual é de 8,5 minutos, o que está abaixo do limite de 15 minutos estipulado. A carga não é refrigerada, e a situação atual é \"folga baixa\". É necessário monitorar essa entrega para garantir que ela seja realizada dentro do prazo estipulado."
+      },
+      {
+        "case": "veiculo",
+        "elapsed_seconds": 65.69396210000559,
+        "tools": [
+          "detalhar_rota"
+        ],
+        "reference_tool_check": true,
+        "response": "A rota da MOTO #1 tem uma distância total de 35,82 km e o horário de retorno ao depósito é às 12:28. O veículo partiu do depósito às 07:00."
+      },
+      {
+        "case": "indisponivel",
+        "elapsed_seconds": 15.614412900002208,
+        "tools": [],
+        "reference_tool_check": null,
+        "response": "O trânsito em tempo real durante esta operação não está disponível nos dados fornecidos. Não há informações atualizadas sobre condições de tráfego ou atrasos causados por problemas de trânsito."
+      }
+    ],
+    "manual_review_required": true
+  },
+  "initial_review": {
+    "riscos": "Falha semântica: classificou uma entrega alta como crítica; não havia críticas em risco.",
+    "veiculo": "Conferido: MOTO #1, 35,82 km, retorno 12:28.",
+    "indisponivel": "Reconheceu ausência de informação de trânsito em tempo real."
+  },
+  "corrected_ui_response": {
+    "resposta": "Nenhuma entrega de prioridade crítica está atrasada ou com folga inferior a 15 minutos. A contagem é zero, indicando que não há entregas críticas em risco na execução atual.",
+    "ferramentas": [
+      {
+        "nome": "entregas_em_risco",
+        "argumentos": {
+          "folga_minima_min": 15,
+          "prioridade": "critica"
+        },
+        "resumo": "[{\"mensagem\": \"Nenhuma entrega de prioridade crítica está atrasada ou com folga inferior a 15 minutos.\", \"quantidade\": 0, \"prioridade_filtrada\": \"critica\", \"observacao\": \"Zero é uma contagem calculada, não informação ausente.\"}]"
+      }
+    ],
+    "provedor": "ollama",
+    "modelo": "qwen3:4b"
+  },
+  "browser": {
+    "page_errors": [],
+    "url": "http://127.0.0.1:8000/#assistente",
+    "model_chip": "LLM: ollama · qwen3:4b\nonline"
+  },
+  "corrected_reference": {
+    "critical_risks": [],
+    "critical_risk_count": 0
+  },
+  "scope": "Teste funcional e revisão de casos conhecidos. Não é benchmark geral de acurácia ou de hardware.",
+  "limitations": [
+    "Filtro de prioridade foi ajustado com o caso já conhecido.",
+    "Ferramentas e prompts não garantem ausência de alucinações.",
+    "Não reavalia otimização, custos ou adequação operacional do projeto."
+  ]
+}
