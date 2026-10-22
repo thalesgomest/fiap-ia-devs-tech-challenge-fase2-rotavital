@@ -12,7 +12,7 @@
 
 **Tech Challenge — Fase 2 · Projeto 2 · Pós-graduação em IA (FIAP)**
 
-📄 Relatório Técnico (em elaboração) · 🔗 Repositório: [link do repositório]
+📄 [Relatório Técnico Completo](reports/relatorio_tecnico.pdf) · 🔗 [Repositório](https://github.com/thalesgomest/fiap-ia-devs-tech-challenge-fase2-rotavital)
 
 </div>
 
@@ -68,14 +68,14 @@ Cenário principal `sp-hemorrede-40` (40 entregas, frota de 9 veículos):
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Representação genética            | Permutação das entregas ("tour gigante") decodificada pelo Split de Prins (programação dinâmica)                 |
 | Configuração final                | População 120 · torneio k=3 · cruzamento OX (0,9) · mutação adaptativa 0,25→0,8 · elitismo 2 · busca local 2-opt |
-| Custo do GA                       | R$ 1.617 (média de 3 sementes, desvio de R$ 12,62)                                                               |
-| Melhor heurística (Clarke-Wright) | R$ 4.230 — o GA fica **62% abaixo no custo total**                                                               |
+| Custo do GA                       | R$ 1.630 (média de 10 sementes, desvio de R$ 27,93; pior execução R$ 1.676)                                      |
+| Melhor heurística (Clarke-Wright) | R$ 4.230 — o GA fica **61,5% abaixo no custo total**                                                             |
 | Só custo operacional (sem multas) | GA R$ 1.607 × Clarke-Wright R$ 1.730 — **cerca de 7% abaixo**                                                    |
 | Frota                             | GA usa 7 veículos e é a **única abordagem que cabe na frota real**; todas as heurísticas excedem e pagam multa   |
-| Pontualidade                      | 100% das entregas no prazo                                                                                       |
-| Experimentos                      | 8 configurações × 3 sementes, variando um fator por vez                                                          |
+| Pontualidade                      | 99,75% das entregas no prazo (média de 10 sementes)                                                              |
+| Experimentos                      | 8 configurações × 10 sementes, um fator por vez; nenhuma difere da base com significância                        |
 
-Detalhamento das configurações e análise: [docs/experimentos.md](docs/experimentos.md).
+Detalhamento de cada etapa, métricas e limitações: **[relatório técnico em PDF](reports/relatorio_tecnico.pdf)** e [docs/experimentos.md](docs/experimentos.md).
 
 ---
 
@@ -116,6 +116,10 @@ Detalhamento das configurações e análise: [docs/experimentos.md](docs/experim
 ├── scripts/               # Tarefas do Makefile (tasks.py) e gerador de cenários
 ├── tests/                 # Testes unitários e de API
 ├── experiments/           # Resultados das baterias de experimentos (gerados)
+├── reports/
+│   ├── figures/           # Figuras do relatório (scripts/gerar_figuras.py)
+│   ├── relatorio_tecnico.html
+│   └── relatorio_tecnico.pdf
 ├── docs/                  # Arquitetura, modelagem do GA, LLM e experimentos
 ├── Makefile
 ├── Dockerfile / docker-compose.yml
@@ -278,8 +282,11 @@ Equivalentes dos demais comandos (no Windows, troque `venv/bin/python` por `.\ve
 ## 📄 Relatório Técnico
 
 O relatório técnico desta fase — implementação do algoritmo genético, estratégias para
-as restrições, integração com LLM, comparativo com outras abordagens e visualizações —
-está em elaboração e será publicado em `reports/relatorio_tecnico.pdf`.
+as restrições, integração com LLM, comparativo com outras abordagens, visualizações das
+rotas e arquitetura — está em [`reports/relatorio_tecnico.pdf`](reports/relatorio_tecnico.pdf).
+
+O PDF é gerado a partir de `reports/relatorio_tecnico.html`, e as figuras com
+`python scripts/gerar_figuras.py --exp experiments/<pasta>` (requer `matplotlib`).
 
 ## 🔗 Repositório
 
