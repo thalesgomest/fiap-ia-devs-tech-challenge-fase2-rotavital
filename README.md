@@ -12,7 +12,7 @@
 
 **Tech Challenge — Fase 2 · Projeto 2 · Pós-graduação em IA (FIAP)**
 
-📄 [Relatório Técnico Completo](reports/relatorio_tecnico.pdf) · 🔗 [Repositório](https://github.com/thalesgomest/fiap-ia-devs-tech-challenge-fase2-rotavital)
+📄 [Relatório Técnico Completo](reports/relatorio_tecnico.pdf) · ▶️ [Vídeo no YouTube](https://youtu.be/I0WmUrxU68M) · 🔗 [Repositório](https://github.com/thalesgomest/fiap-ia-devs-tech-challenge-fase2-rotavital)
 
 </div>
 
@@ -279,13 +279,18 @@ Equivalentes dos demais comandos (no Windows, troque `venv/bin/python` por `.\ve
 
 ---
 
+## 🎥 Vídeo de Demonstração
+
+Apresentação do projeto, explicação do algoritmo genético e da integração com LLM, e
+demonstração do sistema em execução: <https://youtu.be/I0WmUrxU68M>
+
 ## 📄 Relatório Técnico
 
 O relatório técnico desta fase — implementação do algoritmo genético, estratégias para
 as restrições, integração com LLM, comparativo com outras abordagens, visualizações das
 rotas e arquitetura — está em [`reports/relatorio_tecnico.pdf`](reports/relatorio_tecnico.pdf).
 
-O PDF é gerado a partir de `reports/relatorio_tecnico.html`, e as figuras com
+As figuras do relatório são geradas com
 `python scripts/gerar_figuras.py --exp experiments/<pasta>` (requer `matplotlib`).
 
 ## 🔗 Repositório
